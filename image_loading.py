@@ -1,7 +1,9 @@
+from __future__ import absolute_import
 import os
 import numpy as np
 import cv2
 import random
+import sys
 
 def get_immediate_subdirectories(directory_path):
 	return [sub_directory for sub_directory in os.listdir(directory_path) 
@@ -13,11 +15,21 @@ def get_filenames(files_path):
 
 def get_file_number(directory_path):
 	return len(get_filenames(directory_path))
+
+def load_filenames(dataset_directory):
+	train_dir = os.path.join(dataset_directory, 'train')
+	test_dir
+
+def load_images():
+	pass
 	
 def main():
-	train_dir = '/home/felipe/topicos_compvis/utils/data_part1/train'
-	test_dir = '/home/felipe/topicos_compvis/utils/data_part1/test'
-	train_test_rate = 0.7
+	# PARAMETERS
+	train_dir = sys.argv[1] #'/tmp/guest-jbsthn/topicos_compvis3/data_part1/train'
+	test_dir = sys.argv[2] #'/tmp/guest-jbsthn/topicos_compvis3/data_part1/test'
+	train_test_rate = float(sys.argv[3]) #0.7
+	
+	# LOADING IMAGE NAMES AND LABELS
 	
 	directory_list = get_immediate_subdirectories(train_dir)
 
@@ -31,8 +43,12 @@ def main():
 		for image in image_list:
 			image_path = os.path.join(directory_path, image)
 			imgs.append((image_path, label))
+	
+	# SHUFFLING IMAGES
 		
 	random.shuffle(imgs)
+	
+	# LOADING IMAGES ON A NUMPY ARRAY
 	
 	sample_img_path = imgs[0][0]
 	example_image = cv2.imread(sample_img_path, cv2.IMREAD_GRAYSCALE)
@@ -54,13 +70,13 @@ def main():
 	
 	i = 0
 	for image_path, label in imgs[ : split_point]:	
-		X_train[i] = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+		X_train[i] = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE).reshape(height, width, num_channels)
 		y_train[i] = label
 		i += 1
 	
 	i = 0
 	for image_path, label in imgs[split_point : ]:
-		X_test[i] = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+		X_test[i] = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE).reshape(height, width, num_channels)
 		y_test[i] = label
 		i += 1
 		

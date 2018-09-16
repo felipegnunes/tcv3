@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+#from __future__ import absolute_import
 import os
 import numpy as np
 import cv2
@@ -6,54 +6,50 @@ import random
 import sys
 
 def get_immediate_subdirectories(directory_path):
-	return [sub_directory for sub_directory in os.listdir(directory_path) 
-		if os.path.isdir(os.path.join(directory_path, sub_directory))]
+	return [subdirectory for subdirectory in os.listdir(directory_path) if os.path.isdir(os.path.join(directory_path, subdirectory))]
 
-def get_filenames(files_path):
-	filenames = [f for f in os.listdir(files_path) if os.path.isfile(os.path.join(files_path, f))]
-	return filenames
+def get_filenames(directory_path):
+	return [filename for filename in os.listdir(directory_path) if os.path.isfile(os.path.join(directory_path, filename))]
 
-def load_filenames(dataset_directory):
-	train_dir_path = os.path.join(dataset_directory, 'train')
-	test_dir_path = os.path.join(dataset_directory, 'test')
+def load_dataset(dataset_directory):
+	train_directory_path = os.path.join(dataset_directory, 'train')
+	test_directory_path = os.path.join(dataset_directory, 'test')
 	
-	train_directories = get_immediate_subdirectories(train_dir_path)
-	test_directories = get_immediate_subdirectories(test_dir_path)
+	labeled_directories = get_immediate_subdirectories(train_directory_path)
 	
 	train_images = []
 	
-	for directory in train_directories:
-		directory_path = os.path.join(train_dir_path, directory)
+	for directory in labeled_directories:
+		directory_path = os.path.join(train_directory_path, directory)
 		label = int(directory)
 		image_list = get_filenames(directory_path)
 	
-		for image in image_list:
-			image_path = os.path.join(directory_path, image)
+		for image_name in image_list:
+			image_path = os.path.join(directory_path, image_name)
 			train_images.append((image_path, label))
 	
-	test_images = get_filenames(test_dir_path)
+	test_images = get_filenames(test_directory_path)
 	
 	return train_images, test_images		
 
 def load_images(dataset):
-	example_img_path = dataset[0][0]
-	example_image = cv2.imread(example_img_path, cv2.IMREAD_UNCHANGED)
+	example_image_path, _ = dataset[0]
+	example_image = cv2.imread(example_image_path, cv2.IMREAD_UNCHANGED)
 	
-	height = example_image.shape[0] 
-	width = example_image.shape[1]
 	if (len(example_image.shape) < 3):
+		height, width = example_image.shape
 		num_channels = 1
 	else:
-		num_channels = example_image.shape[2]
+		height, width, num_channels = example_image.shape
 	
-	num_imgs = len(dataset)
+	num_images = len(dataset)
 	
-	X = np.empty([num_imgs, height, width, num_channels], dtype = np.uint8)
-	y = np.empty([num_imgs], dtype = np.int64)
+	X = np.empty([num_images, height, width, num_channels], dtype = np.float64)
+	y = np.empty([num_images], dtype = np.int64)
 	
 	i = 0
 	for image_path, label in dataset:	
-		X[i] = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE).reshape(height, width, num_channels)
+		X[i] = cv2.imread(image_path, cv2.IMREAD_UNCHANGED).reshape(height, width, num_channels)
 		y[i] = label
 		i += 1
 	
@@ -62,13 +58,12 @@ def load_images(dataset):
 def main():
 	# PARAMETERS
 	dataset_dir = sys.argv[1]
-	train_test_rate = float(sys.argv[2])
+	train_split_rate = float(sys.argv[2])
 	
 	# LOADING IMAGE NAMES AND LABELS
 	
-	train_set, validation_set = load_filenames(dataset_dir)
-	print(len(train_set))
-	print(len(validation_set))
+	train_set, test_set = load_dataset(dataset_dir)
+	print('Train set size: {}\nTest set size: {}'.format(len(train_set), len(test_set)))
 	
 	# SHUFFLING IMAGES
 		
@@ -77,42 +72,18 @@ def main():
 	# LOADING IMAGES ON A NUMPY ARRAY
 	
 	X, y = load_images(train_set)
+	X /= 255
 	
-	#sample_img_path = imgs[0][0]
-	#example_image = cv2.imread(sample_img_path, cv2.IMREAD_GRAYSCALE)
+	print(min(X), min(y))
+	print(max(X), max(y))
 	
-	#if (len(example_image.shape) < 3):
-	#	height, width = example_image.shape
-	#	num_channels = 1
-	#else:
-	#	height, width, num_channels = example_image.shape
-			
-	#split_point = int(train_test_rate * len(imgs))
-	#num_train_imgs = split_point
-	#num_test_imgs = len(imgs) - split_point
-	
-	#X_train = np.empty([num_train_imgs, height, width, num_channels], dtype=np.uint8)
-	#X_test = np.empty([num_test_imgs, height, width, num_channels], dtype=np.uint8)
-	#y_train = np.empty([num_train_imgs], dtype=np.int64)
-	#y_test = np.empty([num_test_imgs], dtype=np.int64)
-	
-	#i = 0
-	#for image_path, label in imgs[ : split_point]:	
-	#	X_train[i] = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE).reshape(height, width, num_channels)
-	#	y_train[i] = label
-	#	i += 1
-	
-	#i = 0
-	#for image_path, label in imgs[split_point : ]:
-	#	X_test[i] = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE).reshape(height, width, num_channels)
-	#	y_test[i] = label
-	#	i += 1
-		
 	print('X: {}\ny: {}'.format(X.shape, y.shape))	
 		
-	cv2.imshow('x_train', X[0])
+	t = random.randint(0, len(X))
+	print(t)	
+	cv2.imshow('x_train', X[t])
 	cv2.waitKey(0)
-	cv2.destroyAllWindows()	
+	cv2.destroyAllWindows()
 	
 if __name__ == '__main__':
 	main()

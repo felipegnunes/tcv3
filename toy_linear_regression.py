@@ -26,7 +26,7 @@ def linear_regression(X, y, m = 0, b = 0, iterations = 1000, learning_rate = 0.0
 	for i in range(iterations):
 		y_hat = m*X + b
 		
-		m_gradient = -2 * np.mean(np.sum( X * (y - y_hat)))
+		m_gradient = -2 * np.mean(np.sum( X * (y - y_hat) ))
 		b_gradient = -2 * np.mean(np.sum( y - y_hat ))
 		
 		m -= learning_rate * m_gradient
@@ -35,6 +35,19 @@ def linear_regression(X, y, m = 0, b = 0, iterations = 1000, learning_rate = 0.0
 	error = np.mean(np.power(y - (m*X + b), 2))
 	
 	return m, b, error
+	
+def _linear_regression(X, y, m, b, iterations, learning_rate):
+	N = X.shape[0]
+	
+	for i in range(iterations):
+		y_hat = [np.dot(m, x) + b for x in X]
+		
+		for j in range(len(m)):
+			m_gradient = -2 * np.mean(np.sum( X * (y - y_hat) ))
+		
+		b_gradient = -2 * np.mean(np.sum( y - y_hat ))
+	
+	error = np.mean		
 
 def main():
 	sample_size = int(5000)
@@ -51,7 +64,7 @@ def main():
 		
 	print(max(X), max(y))	
 	st = time.time()
-	print(linear_regression(X, y, m = 0, b = 0, iterations = int(1e7), learning_rate = 1e-8))
+	print(linear_regression(X, y, m = 0, b = 0, iterations = int(1e3), learning_rate = 1e-8))
 	fn = time.time()
 	
 	time_seconds = fn - st

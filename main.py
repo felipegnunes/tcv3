@@ -7,7 +7,7 @@ import time
 import dataset_loader
 import linear_regression
 import logistic_regression
-	
+
 def main():
 	# PARAMETERS
 	dataset_dir = sys.argv[1]
@@ -27,7 +27,7 @@ def main():
 	X = dataset_loader.load_images([row[0] for row in train_set])
 	y = np.array([row[1] for row in train_set], dtype = np.int64)
 	X /= 255
-
+	
 	# TRANSFORMING X IN A ARRAY
 	
 	num_images = X.shape[0]
@@ -38,16 +38,13 @@ def main():
 	X_train , X_validation, y_train, y_validation = dataset_loader.train_test_split(X, y, train_rate)
 	
 	print('X_train: {}\nX_validation: {}\ny_train: {}\ny_validation: {}'.format(len(X_train), len(X_validation), len(y_train), len(y_validation)))		
-		
+	print(X.shape)
+	
 	#model = linear_regression.LinearRegression(eta = 1e-2, n_iter = 1000).fit(X_train, y_train) 
 	#model = linear_regression.LinearRegressionSGD(eta = 1e-3, n_iter = 100000).fit(X_train, y_train)
 	
-	#print(model.predict(X_validation[:10]))
-	#print(y_validation[:10])
-	#print(model.mean_squared_error(X_validation, y_validation))
-	
 	start = time.time()
-	model = logistic_regression.LogisticRegression(eta = 1e-1, n_iter = 20000).fit(X_train, y_train)
+	model = logistic_regression.LogisticRegression(eta = 1e-1, n_iter = 1000).fit(X_train, y_train)
 	finish = time.time()
 	
 	time_seconds = finish - start

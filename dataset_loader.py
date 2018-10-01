@@ -25,7 +25,8 @@ def load_dataset(dataset_directory):
 			image_path = os.path.join(directory_path, image_name)
 			train_images.append((image_path, label))
 	
-	test_images = get_filenames(test_directory_path)
+	test_image_names = get_filenames(test_directory_path)
+	test_images = [os.path.join(test_directory_path, image_name) for image_name in test_image_names]
 	
 	return train_images, test_images
 

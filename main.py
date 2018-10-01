@@ -3,9 +3,9 @@ import numpy as np
 import random
 import sys
 import time
+import pickle
 
 import dataset_loader
-import linear_regression
 import logistic_regression
 
 def main():
@@ -24,14 +24,19 @@ def main():
 	
 	# LOADING IMAGES ON A NUMPY ARRAY
 	
+	hidden_dataset = dataset_loader.load_images(test_set)
 	X = dataset_loader.load_images([row[0] for row in train_set])
 	y = np.array([row[1] for row in train_set], dtype = np.int64)
 	X /= 255
 	
 	# TRANSFORMING X IN A ARRAY
 	
+	hidden_dataset = hidden_dataset.reshape(hidden_dataset.shape[0], -1)
+	hidden_dataset /= 255
+	
 	num_images = X.shape[0]
-	X = X.reshape(num_images, -1)	
+	X = X.reshape(num_images, -1)
+	y = np.array([[1 if i == classification else 0 for i in range(10)] for classification in y])	
 	
 	# TRAIN/TEST SPLIT
 	
@@ -40,21 +45,11 @@ def main():
 	print('X_train: {}\nX_validation: {}\ny_train: {}\ny_validation: {}'.format(len(X_train), len(X_validation), len(y_train), len(y_validation)))		
 	print(X.shape)
 	
-	#model = linear_regression.LinearRegression(eta = 1e-2, n_iter = 1000).fit(X_train, y_train) 
-	#model = linear_regression.LinearRegressionSGD(eta = 1e-3, n_iter = 100000).fit(X_train, y_train)
+	model = logistic_regression.LogisticRegression(X.shape[1], y.shape[1], eta = 1e-2)
+	model.fit(X_train, y_train, num_iterations = None, time_limit = 20, verbose = True)
 	
-	start = time.time()
-	model = logistic_regression.LogisticRegression(eta = 1e-1, n_iter = 1000).fit(X_train, y_train)
-	finish = time.time()
-	
-	time_seconds = finish - start
-	time_minutes = time_seconds/60
-	
-	print('Wall clock time: {:.2f} s.'.format(time_seconds))
-	print('Wall clock time: {:.2f} min.'.format(time_minutes))
-	
-	print(model.score(X_train, y_train))
-	print(model.score(X_validation, y_validation))
+	print('Validation Set Accuracy: {}'.format(model.accuracy(X_validation, y_validation)))
 		
+	print(model.predict(hidden_dataset[:10]))	
 if __name__ == '__main__':
 	main()

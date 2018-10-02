@@ -7,6 +7,7 @@ import pickle
 
 import dataset_loader
 import logistic_regression
+import one_hidden_layer
 
 def main():
 	# PARAMETERS
@@ -45,8 +46,11 @@ def main():
 	print('X_train: {}\nX_validation: {}\ny_train: {}\ny_validation: {}'.format(len(X_train), len(X_validation), len(y_train), len(y_validation)))		
 	print(X.shape)
 	
-	model = logistic_regression.LogisticRegression(X.shape[1], y.shape[1], eta = 1e-2)
-	model.fit(X_train, y_train, num_iterations = None, time_limit = 20, verbose = True)
+	#model = logistic_regression.LogisticRegression(X.shape[1], y.shape[1], eta = 1e-2)
+	#model.fit(X_train, y_train, num_iterations = None, time_limit = 20, verbose = True)
+	
+	model = one_hidden_layer.OneHiddenLayer(X.shape[1], y.shape[1], 200, eta = 1e-1)
+	model.fit(X_train, y_train, num_iterations = None, time_limit = 60, verbose = True)
 	
 	print('Validation Set Accuracy: {}'.format(model.accuracy(X_validation, y_validation)))
 		

@@ -51,10 +51,11 @@ def load_images(image_list):
 	
 	return images
 
-def train_test_split(X, y, rate = 0.7):
+def dataset_split(X, y, rate = 0.7):
 	split_point = int(X.shape[0] * rate)
-	X_train = X[ : split_point]
-	X_validation = X[split_point : ]
-	y_train = y[ : split_point]
-	y_validation = y[split_point : ]
-	return X_train , X_validation, y_train, y_validation	
+	X1 = X[ : split_point]
+	X2 = X[split_point : ]
+	y1 = y[ : split_point]
+	y2 = y[split_point : ]
+	return X1 , X2, y1, y2	
+	

@@ -34,7 +34,7 @@ class OneHiddenLayer:
 									)
 			
 			self.hidden_layer = tf.layers.dense(tf.nn.dropout(self.X, self.keep_prob), hidden_layer_size, activation = tf.nn.relu, name = 'hidden_layer')
-			self.output_layer = tf.layers.dense(tf.nn.dropout(self.hidden_layer, self.keep_prob), num_outputs, activation = tf.nn.softmax, name = 'output_layer')
+			self.output_layer = tf.layers.dense(self.hidden_layer, num_outputs, activation = tf.nn.softmax, name = 'output_layer')
 			
 			self.result = tf.argmax(self.output_layer, 1)
 			self.loss = tf.losses.softmax_cross_entropy(self.y_one_hot, self.output_layer) #tf.losses.mean_squared_error(labels = self.y_one_hot, predictions = self.output_layer)
@@ -43,8 +43,9 @@ class OneHiddenLayer:
 			self.train_operation = tf.train.GradientDescentOptimizer(learning_rate = self.learning_rate, name = 'train_operation').minimize(self.loss, global_step = self.global_step) 
 		
 	
-	def train(self, X_train, y_train, X_validation, y_validation, batch_size, num_epochs):
+	def train(self, X_train, y_train, X_validation, y_validation, batch_size, num_epochs, X_hidden):
 		self.session = tf.Session(graph = self.graph)
+		best_acc = 0
 		
 		with self.session as session:
 			session.run(tf.global_variables_initializer())
@@ -86,12 +87,17 @@ class OneHiddenLayer:
 																			       self.y: y_validation
 																			       })
 				print('Learning Rate: {}\tValidation Loss: {}\tValidation Accuracy: {}'.format(learning_rate, validation_loss, validation_accuracy))
-			
+				if (validation_accuracy > best_acc):
+					best_acc = validation_accuracy
+					predictions = session.run([self.result], feed_dict = {self.X: X_hidden})
+				
+		return best_acc, predictions	
+
 def main():
 	os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 	DATASET_DIRECTORY = '/home/felipe/tcv3/data_part1'
 	TRAIN_RATE = 0.8
-	NUM_EPOCHS = 20000
+	NUM_EPOCHS = 2000
 	BATCH_SIZE = 500
 	HIDDEN_LAYER_SIZE = 400
 	
@@ -105,7 +111,21 @@ def main():
 	
 	model = OneHiddenLayer(X.shape[1], num_classes, HIDDEN_LAYER_SIZE, 5e0, 200, 0.88)
 	#model = OneHiddenLayer(X.shape[1], num_classes, HIDDEN_LAYER_SIZE, 4e0, 300, 0.85)
-	model.train(X_train, y_train, X_validation, y_validation, BATCH_SIZE, NUM_EPOCHS)
+	#model.train(X_train, y_train, X_validation, y_validation, BATCH_SIZE, NUM_EPOCHS)
+	
+	best_acc, predictions = model.train(X_train, y_train, X_validation, y_validation, BATCH_SIZE, NUM_EPOCHS, X_hidden)
+	print('Best: {}'.format(best_acc))
+	
+	_, test_images = dataset_manip.load_paths(DATASET_DIRECTORY)
+	
+	result = list(zip(test_images, predictions[0]))
+	
+	result.sort(key = lambda x: int(os.path.splitext(os.path.basename(x[0]))[0]))
+	print('Number of predictions: {}'.format(len(result)))
+	
+	with open('multilayer_perceptron.txt', 'w') as f:
+		for image_name, prediction in result:
+			f.write('{} {}\n'.format(os.path.basename(image_name), prediction))
 	
 if __name__ == '__main__':
 	main()

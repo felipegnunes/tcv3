@@ -37,7 +37,7 @@ class OneHiddenLayer:
 			self.output_layer = tf.layers.dense(self.hidden_layer, num_outputs, activation = tf.nn.softmax, name = 'output_layer')
 			
 			self.result = tf.argmax(self.output_layer, 1)
-			self.loss = tf.losses.softmax_cross_entropy(self.y_one_hot, self.output_layer) #tf.losses.mean_squared_error(labels = self.y_one_hot, predictions = self.output_layer)
+			self.loss = tf.losses.softmax_cross_entropy(self.y_one_hot, self.output_layer)
 			self.accuracy = tf.reduce_mean(tf.cast(tf.equal(self.result, self.y), tf.float32), name = 'accuracy')
 			
 			self.train_operation = tf.train.GradientDescentOptimizer(learning_rate = self.learning_rate, name = 'train_operation').minimize(self.loss, global_step = self.global_step) 

@@ -25,22 +25,21 @@ class Model:
 			self.learning_rate = tf.placeholder(tf.float32, name = 'learning_rate')
 			
 			print(self.X.shape)
-			self.output = tf.layers.conv2d(self.X, filters = 64, kernel_size = (3, 3), strides = (2, 2), padding = 'valid', activation = tf.nn.relu)
+			self.output = tf.layers.conv2d(self.X, filters = 64, kernel_size = (2, 2), strides = (2, 2), padding = 'same', activation = tf.nn.relu)
 			print(self.output.shape)
-			self.output = tf.layers.max_pooling2d(self.output, pool_size = (2, 2), strides = (2, 2), padding = 'valid')
+			self.output = tf.layers.max_pooling2d(self.output, pool_size = (2, 2), strides = (2, 2), padding = 'same')
 			print(self.output.shape)
-			self.output = tf.layers.conv2d(self.X, filters = 128, kernel_size = (3, 3), strides = (2, 2), padding = 'valid', activation = tf.nn.relu)
+			self.output = tf.layers.conv2d(self.output, filters = 128, kernel_size = (3, 3), strides = (2, 2), padding = 'same', activation = tf.nn.relu)
 			print(self.output.shape)
-			self.output = tf.layers.max_pooling2d(self.output, pool_size = (2, 2), strides = (2, 2), padding = 'valid')
+			self.output = tf.layers.max_pooling2d(self.output, pool_size = (2, 2), strides = (2, 2), padding = 'same')
 			print(self.output.shape)
 			
 			num_elements = self.output.shape[1] * self.output.shape[2] * self.output.shape[3]
 			self.output = tf.reshape(self.output, (-1, num_elements))
+			self.output = tf.layers.dense(self.output, num_elements // 2, activation = tf.nn.relu)
 			self.output = tf.layers.dense(self.output, num_classes, activation = tf.nn.softmax)
-			print(self.output.shape)
 			
 			self.result = tf.argmax(self.output, 1, output_type = tf.int32)
-			print(self.result.shape)
 			self.loss = tf.losses.softmax_cross_entropy(self.y_one_hot, self.output)
 			self.accuracy = tf.reduce_mean(tf.cast(tf.equal(self.result, self.y), tf.float32), name = 'accuracy')
 			
@@ -53,7 +52,7 @@ class Model:
 					self.saver.save(session, self.model_path)
 			
 	def train(self, X_train, y_train, X_validation, y_validation, num_epochs):
-		best_acc = 0
+		best_acc = self.measure_accuracy(X_validation, y_validation)
 		
 		with tf.Session(graph = self.graph) as session:
 			self.saver.restore(session, self.model_path)
@@ -104,15 +103,17 @@ class Model:
 				
 				training_loss /= num_batches
 				training_accuracy /= num_batches
-				validation_loss, validation_accuracy = session.run([self.loss, self.accuracy], feed_dict = {self.X: X_validation, self.y: y_validation})
+				#validation_loss, validation_accuracy = session.run([self.loss, self.accuracy], feed_dict = {self.X: X_validation, self.y: y_validation})
 				
-				print('Training Loss: {:8.5}       Training Accuracy: {:8.5}'.format(training_loss, training_accuracy))
-				print('Validation Loss: {:8.5}     Validation Accuracy: {:8.5}'.format(validation_loss, validation_accuracy))
+				#validation_accuracy = self.measure_accuracy(X_validation, y_validation)
 				
-				if (validation_accuracy > best_acc):
-					best_acc = validation_accuracy
-					print('New best accuracy is {}'.format(best_acc))
-					self.saver.save(session, self.model_path)
+				print('Training Accuracy:   {:8.5}\tTraining Loss:   {:8.5}'.format(training_accuracy, training_loss))
+				#print('Validation Loss: {:8.5}     Validation Accuracy: {:8.5}'.format(validation_loss, validation_accuracy))
+				#print('Validation Accuracy: {:8.5}'.format(validation_accuracy))
+				#if (validation_accuracy > best_acc):
+				#	best_acc = validation_accuracy
+				#	print('Best accuracy:   {:8.5}'.format(best_acc))
+				#	self.saver.save(session, self.model_path)
 			
 	def predict(self, X):
 		num_samples = X.shape[0]
@@ -126,13 +127,16 @@ class Model:
 				predictions[i : min(i + self.batch_size, num_samples)] = session.run(self.result, feed_dict = {self.X: X[i : min(i + self.batch_size, num_samples)]})
 		
 		return predictions
+	
+	def measure_accuracy(self, X, y):
+		return np.mean(self.predict(X) == y)
 		
 def main():
 	os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 	DATASET_DIRECTORY = '/home/felipe/tcv3/data_part1'
 	TRAIN_RATE = 0.8
 	NUM_EPOCHS = 10000
-	BATCH_SIZE = 100
+	BATCH_SIZE = 8
 	
 	X, y, X_hidden = dataset_manip.load_dataset(DATASET_DIRECTORY)
 	num_classes = len(set(y))
@@ -142,15 +146,18 @@ def main():
 	
 	X_train, X_validation, y_train, y_validation = dataset_manip.split_dataset(X, y, rate = TRAIN_RATE)
 
-	model = Model(image_shape = X.shape[1 : ], num_classes = num_classes, model_path = './test_model', batch_size = BATCH_SIZE, first_run = False)
+	model = Model(image_shape = X.shape[1 : ], num_classes = num_classes, model_path = './test_model', batch_size = BATCH_SIZE, first_run = True)
 	
-	#model.load('test_model')
-	model.train(X_train, y_train, X_validation, y_validation, 10000)
-	#model.train(X_train, y_train, X_validation, y_validation, 1)
-	#model.save('test_model')
+	#model.train(X_train, y_train, X_validation, y_validation, 33)
+	#model.train(X_train, y_train, X_validation, y_validation, 33)
+	model.train(X_train, y_train, X_validation, y_validation, 100)
 	
-	print(model.predict(X_hidden))
-	#predictions = model.predict(X_hidden, 10)
+	#print(model.measure_accuracy(X_validation, y_validation))
+	#predictions = model.predict(X_hidden)
+	
+	#ensemble = Ensemble(num_models = 11, total_num_epochs = 1000, batch_size = 100)
+	#ensemble.train(X, y)
+	#ensemble.predict(X_hidden)
 	
 if __name__ == '__main__':
 	main()

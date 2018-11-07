@@ -23,19 +23,29 @@ class Model:
 			self.y = tf.placeholder(tf.int32, shape = (None, ), name = 'y')
 			self.y_one_hot = tf.one_hot(self.y, num_classes)
 			self.learning_rate = tf.placeholder(tf.float32, name = 'learning_rate')
+			self.keep_prob0 = tf.placeholder_with_default(1.0, shape = ())
 			self.keep_prob1 = tf.placeholder_with_default(1.0, shape = ())
 			self.keep_prob2 = tf.placeholder_with_default(1.0, shape = ())
 			
-			self.output = tf.layers.conv2d(self.X, filters = 64, kernel_size = (3, 3), strides = (3, 3), padding = 'same', activation = tf.nn.relu)
-			self.output = tf.layers.max_pooling2d(self.output, pool_size = (2, 2), strides = (2, 2), padding = 'same')
+			self.output = tf.layers.conv2d(self.X, filters = 32, kernel_size = (5, 5), strides = (1, 1), padding = 'same', activation = tf.nn.relu)
+			self.output = tf.layers.conv2d(self.output, filters = 32, kernel_size = (5, 5), strides = (1, 1), padding = 'same', activation = tf.nn.relu)
+			self.output = tf.layers.max_pooling2d(self.output, pool_size = (2, 2), strides = (1, 1), padding = 'same')
+			self.output = tf.nn.dropout(self.output, self.keep_prob0)			
+			print(self.output.shape)
 			
-			self.output = tf.layers.conv2d(self.output, filters = 128, kernel_size = (3, 3), strides = (3, 3), padding = 'same', activation = tf.nn.relu)
+			self.output = tf.layers.conv2d(self.output, filters = 64, kernel_size = (3, 3), strides = (1, 1), padding = 'same', activation = tf.nn.relu)
+			self.output = tf.layers.conv2d(self.output, filters = 64, kernel_size = (3, 3), strides = (1, 1), padding = 'same', activation = tf.nn.relu)
 			self.output = tf.layers.max_pooling2d(self.output, pool_size = (2, 2), strides = (2, 2), padding = 'same')
+			self.output = tf.nn.dropout(self.output, self.keep_prob1)
+			print(self.output.shape)
 			
 			num_elements = (self.output.shape[1] * self.output.shape[2] * self.output.shape[3])
+			print(num_elements)
 			self.output = tf.reshape(self.output, (-1, num_elements))
 			
-			self.output = tf.layers.dense(self.output, num_classes * 10, activation = tf.nn.relu)
+			self.output = tf.layers.dense(self.output, 512, activation = tf.nn.relu)
+			self.output = tf.nn.dropout(self.output, self.keep_prob2)
+			
 			self.output = tf.layers.dense(self.output, num_classes, activation = tf.nn.softmax)
 			
 			self.result = tf.argmax(self.output, 1, output_type = tf.int32)
@@ -72,8 +82,9 @@ class Model:
 					batch_loss, batch_accuracy, _ = session.run([self.loss, self.accuracy, self.train_operation], 
 										    feed_dict = {self.X: X_train[index : index + self.batch_size], 
 												 self.y: y_train[index : index + self.batch_size],
-												 self.keep_prob1: 1.0,
-												 self.keep_prob2: 1.0, 
+												 self.keep_prob0: 0.75,
+												 self.keep_prob1: 0.75,
+												 self.keep_prob2: 0.5,
 												 self.learning_rate: 1e-3})
 					training_loss += batch_loss
 					training_accuracy += batch_accuracy
@@ -97,8 +108,9 @@ class Model:
 					batch_loss, batch_accuracy, _ = session.run([self.loss, self.accuracy, self.train_operation], 
 										    feed_dict = {self.X: X_remainder,
 										    		 self.y: y_remainder,
-										    		 self.keep_prob1: 1.0,
-										    		 self.keep_prob2: 1.0,
+										    		 self.keep_prob0: 0.75,
+												 self.keep_prob1: 0.75,
+												 self.keep_prob2: 0.5,
 										    		 self.learning_rate: 1e-3})
 					training_loss += batch_loss
 					training_accuracy += batch_accuracy
@@ -147,23 +159,13 @@ class Model:
 	def measure_accuracy(self, X, y):
 		return np.mean(self.predict(X) == y)
 
-class Ensemble:
-	
-	def __init__(self):
-		pass
-		
-	def train(self):
-		pass
-		
-	def predict(self):
-		pass
 		
 def main():
 	os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 	DATASET_DIRECTORY = '/home/felipe/tcv3/data_part1'
 	TRAIN_RATE = 0.8
-	NUM_EPOCHS = 10000
-	BATCH_SIZE = 8
+	NUM_EPOCHS = 50
+	BATCH_SIZE = 10
 	
 	X, y, X_hidden = dataset_manip.load_dataset(DATASET_DIRECTORY)
 	num_classes = len(set(y))
@@ -175,7 +177,7 @@ def main():
 
 	model = Model(image_shape = X.shape[1 : ], num_classes = num_classes, model_path = './test_model', batch_size = BATCH_SIZE, first_run = True)
 	
-	model.train(X_train, y_train, X_validation, y_validation, 1000)
+	model.train(X_train, y_train, X_validation, y_validation, NUM_EPOCHS)
 	
 	#print(model.measure_accuracy(X_validation, y_validation))
 	#predictions = model.predict(X_hidden)
@@ -184,7 +186,14 @@ def main():
 	#ensemble.train(X, y)
 	#ensemble.predict(X_hidden)
 	
-	print(model.measure_accuracy(X_validation, y_validation))
+	#print(model.measure_accuracy(X_validation, y_validation))
+	
+	# ENSEMBLE
+	
+	#num_models = 10
+	#models = []
+	#for i in range(num_models):
+	#	models.append(image_shape = X.shape[1 : ], num_classes = num_classes, model_path = './model' + str(i), batch_size = BATCH_SIZE, first_run = True)
 	
 if __name__ == '__main__':
 	main()

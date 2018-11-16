@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+import dataset_manip
 
 class Model:
 	
@@ -15,26 +16,32 @@ class Model:
 			self.X = tf.placeholder(tf.float32, shape = (None, self.img_height, self.img_width, self.img_num_channels), name = 'X')
 			self.y = tf.placeholder(tf.int32, shape = (None, ), name = 'y')
 			self.y_one_hot = tf.one_hot(self.y, num_classes)
+			self.keep_prob0 = tf.placeholder_with_default(1.0, shape = ())
+			self.keep_prob1 = tf.placeholder_with_default(1.0, shape = ())
+			
+			
 			self.learning_rate = tf.train.exponential_decay(learning_rate = 1e-3, 
 									global_step = self.global_step, 
-									decay_steps = (4000//batch_size) * 25, 
+									decay_steps = (4000//batch_size) * 23, 
 									decay_rate = 0.95, staircase = True, 
 									name = 'learning_rate')
 			
-			self.output = tf.layers.conv2d(self.X, filters = 32, kernel_size = (5, 5), strides = (1, 1), padding = 'same', activation = tf.nn.relu)
-			self.output = tf.layers.conv2d(self.output, filters = 32, kernel_size = (5, 5), strides = (1, 1), padding = 'same', activation = tf.nn.relu)
+			self.output = tf.layers.conv2d(self.X, filters = 6, kernel_size = (5, 5), strides = (1, 1), padding = 'same', activation = tf.nn.relu)
 			self.output = tf.layers.max_pooling2d(self.output, pool_size = (2, 2), strides = (2, 2), padding = 'same')
-			self.output = tf.nn.dropout(self.output, 0.75)			
+			self.output = tf.nn.dropout(self.output, self.keep_prob0)			
 			
-			self.output = tf.layers.conv2d(self.output, filters = 64, kernel_size = (3, 3), strides = (1, 1), padding = 'same', activation = tf.nn.relu)
-			self.output = tf.layers.conv2d(self.output, filters = 64, kernel_size = (3, 3), strides = (1, 1), padding = 'same', activation = tf.nn.relu)
+			self.output = tf.layers.conv2d(self.output, filters = 16, kernel_size = (5, 5), strides = (1, 1), padding = 'same', activation = tf.nn.relu)
 			self.output = tf.layers.max_pooling2d(self.output, pool_size = (2, 2), strides = (2, 2), padding = 'same')
-			self.output = tf.nn.dropout(self.output, 0.75)
+			self.output = tf.nn.dropout(self.output, self.keep_prob0)
+			
+			self.output = tf.layers.conv2d(self.output, filters = 120, kernel_size = (5, 5), strides = (1, 1), padding = 'same', activation = tf.nn.relu)
+			self.output = tf.layers.max_pooling2d(self.output, pool_size = (2, 2), strides = (2, 2), padding = 'same')
+			self.output = tf.nn.dropout(self.output, self.keep_prob0)
 			
 			num_elements = (self.output.shape[1] * self.output.shape[2] * self.output.shape[3])
 			self.output = tf.reshape(self.output, (-1, num_elements))
-			self.output = tf.layers.dense(self.output, 128, activation = tf.nn.relu)
-			self.output = tf.nn.dropout(self.output, 0.5)
+			self.output = tf.layers.dense(self.output, 120, activation = tf.nn.relu)
+			self.output = tf.nn.dropout(self.output, self.keep_prob1)
 			self.output = tf.layers.dense(self.output, num_classes, activation = tf.nn.softmax)
 			
 			self.result = tf.argmax(self.output, 1, output_type = tf.int32)
@@ -66,11 +73,13 @@ class Model:
 				num_batches = 0
 				
 				print('Epoch {}'.format(epoch))
-				print('Learning Rate: {}'.format(session.run(self.learning_rate)))
+				print('Learning Rate: {:.5}'.format(session.run(self.learning_rate)))
 				while index < num_samples:
 					batch_loss, batch_accuracy, _ = session.run([self.loss, self.accuracy, self.train_operation], 
 										    feed_dict = {self.X: X_train[index : index + self.batch_size], 
-												 self.y: y_train[index : index + self.batch_size]})
+												 self.y: y_train[index : index + self.batch_size],
+												 self.keep_prob0: 0.75,
+												 self.keep_prob1: 0.5})
 					training_loss += batch_loss
 					training_accuracy += batch_accuracy
 					num_batches += 1
@@ -90,7 +99,11 @@ class Model:
 				if (X_remainder.shape[0] > 0):
 					X_remainder = np.concatenate((X_remainder, X_train[ : index]), axis = 0)
 					y_remainder = np.concatenate((y_remainder, y_train[ : index]), axis = 0)	
-					batch_loss, batch_accuracy, _ = session.run([self.loss, self.accuracy, self.train_operation], feed_dict = {self.X: X_remainder, self.y: y_remainder})
+					batch_loss, batch_accuracy, _ = session.run([self.loss, self.accuracy, self.train_operation], 
+										    feed_dict = {self.X: X_remainder, 
+										    		 self.y: y_remainder,
+										    		 self.keep_prob0: 0.75,
+												 self.keep_prob1: 0.5})
 					training_loss += batch_loss
 					training_accuracy += batch_accuracy
 					num_batches += 1
@@ -98,23 +111,17 @@ class Model:
 				training_loss /= num_batches
 				training_accuracy /= num_batches
 				
-				num_validation_samples = X_validation.shape[0] 
-				validation_loss = 0
-				validation_accuracy = 0
-				num_val_batches = 0
+				num_validation_samples = X_validation.shape[0]
+				predictions = np.empty(shape = (num_validation_samples, ), dtype = np.int32)
 				for i in range(0, num_validation_samples, self.batch_size):
-					val_batch_loss, val_batch_acc = session.run([self.loss, self.accuracy], feed_dict = {self.X: X_validation[i : min(i + self.batch_size, num_validation_samples)], 
-										    		 			     self.y: y_validation[i : min(i + self.batch_size, num_validation_samples)]
-										    		 			    })
-					validation_loss += val_batch_loss
-					validation_accuracy += val_batch_acc				
-					num_val_batches += 1
-					
-				validation_loss /= num_val_batches
-				validation_accuracy /= num_val_batches	
+					j = min(i + self.batch_size, num_validation_samples)
+					predictions[i : j] = session.run(self.result, feed_dict = {self.X: X_validation[i : min(i + self.batch_size, num_validation_samples)],
+										    		   self.y: y_validation[i : min(i + self.batch_size, num_validation_samples)]
+										    		  })
+				validation_accuracy = np.mean(predictions == y_validation)	
 				
-				print('Training Accuracy:   {:8.5}\tTraining Loss:       {:8.5}'.format(training_accuracy, training_loss))
-				print('Validation Loss:     {:8.5}\tValidation Accuracy: {:8.5}'.format(validation_loss, validation_accuracy))
+				print('Training Accuracy:   {:8.5}\tTraining Loss: {:8.5}'.format(training_accuracy, training_loss))
+				print('Validation Accuracy: {:8.5}'.format(validation_accuracy))
 				
 				if (validation_accuracy > best_acc):
 					best_acc = validation_accuracy
@@ -157,7 +164,7 @@ class Ensemble:
 		
 		self.models = []
 		for i in range(num_models):
-			self.models.append(Model(image_shape = input_shape, num_classes = num_classes, model_path = './ens_model' + str(i), batch_size = batch_size, first_run = True))
+			self.models.append(Model(image_shape = input_shape, num_classes = num_classes, model_path = './ensemble/model_' + str(i), batch_size = batch_size, first_run = True))
 		
 	def train(self, X, y, epochs_per_model, train_rate):
 		num_samples = X.shape[0]
@@ -173,6 +180,7 @@ class Ensemble:
 			
 	def predict(self, X):
 		probabilities = self.models[0].get_probabilities(X)
+		
 		for i in range(1, self.num_models):
 			probabilities = np.multiply(probabilities, self.models[i].get_probabilities(X))
 		

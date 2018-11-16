@@ -1,7 +1,6 @@
 import tensorflow as tf
 import numpy as np
 import dataset_manip
-import collections
 
 class Model:
 	
@@ -58,7 +57,7 @@ class Model:
 					self.saver.save(session, self.model_path)
 			
 	def train(self, X_train, y_train, X_validation, y_validation, num_epochs):
-		best_acc = self.measure_accuracy(X_validation, y_validation)
+		best_accuracy = self.measure_accuracy(X_validation, y_validation)
 		
 		with tf.Session(graph = self.graph) as session:
 			self.saver.restore(session, self.model_path)
@@ -93,9 +92,9 @@ class Model:
 				
 				index = (index % num_samples)
 				
-				p = np.random.permutation(num_samples)
-				X_train = X_train[p]
-				y_train = y_train[p]
+				permutation = np.random.permutation(num_samples)
+				X_train = X_train[permutation]
+				y_train = y_train[permutation]
 				
 				if (X_remainder.shape[0] > 0):
 					X_remainder = np.concatenate((X_remainder, X_train[ : index]), axis = 0)
@@ -116,17 +115,18 @@ class Model:
 				predictions = np.empty(shape = (num_validation_samples, ), dtype = np.int32)
 				for i in range(0, num_validation_samples, self.batch_size):
 					j = min(i + self.batch_size, num_validation_samples)
-					predictions[i : j] = session.run(self.result, feed_dict = {self.X: X_validation[i : min(i + self.batch_size, num_validation_samples)],
-										    		   self.y: y_validation[i : min(i + self.batch_size, num_validation_samples)]
-										    		  })
+					predictions[i : j] = session.run(self.result, 
+									 feed_dict = {self.X: X_validation[i : min(i + self.batch_size, num_validation_samples)],
+										      self.y: y_validation[i : min(i + self.batch_size, num_validation_samples)]
+										     })
 				validation_accuracy = np.mean(predictions == y_validation)	
 				
 				print('Training Accuracy:   {:8.5}\tTraining Loss: {:8.5}'.format(training_accuracy, training_loss))
 				print('Validation Accuracy: {:8.5}'.format(validation_accuracy))
 				
-				if (validation_accuracy > best_acc):
-					best_acc = validation_accuracy
-					print('New best accuracy:   {:8.5}'.format(best_acc))
+				if (validation_accuracy > best_accuracy):
+					best_accuracy = validation_accuracy
+					print('New best accuracy:   {:8.5}'.format(best_accuracy))
 					self.saver.save(session, self.model_path)
 			
 	def predict(self, X):
@@ -141,58 +141,6 @@ class Model:
 		
 		return predictions
 	
-	def get_probabilities(self, X):
-		num_samples = X.shape[0]
-		model_output = np.empty(shape = (num_samples, self.num_classes))
-		
-		with tf.Session(graph = self.graph) as session:
-			self.saver.restore(session, self.model_path)
-			
-			for i in range(0, num_samples, self.batch_size):
-				model_output[i : min(i + self.batch_size, num_samples)] = session.run(self.output, feed_dict = {self.X: X[i : min(i + self.batch_size, num_samples)]})
-		
-		return model_output
-	
 	def measure_accuracy(self, X, y):
 		return np.mean(self.predict(X) == y)
-
-
-class Ensemble:
-
-	def __init__(self, input_shape, num_classes, num_models, batch_size, path = './', load = False):
-		self.num_models = num_models
-		self.batch_size = batch_size
-		
-		self.models = []
-		for i in range(num_models):
-			self.models.append(Model(image_shape = input_shape, num_classes = num_classes, model_path = path + 'model_' + str(i), batch_size = batch_size, first_run = not load))
-		
-	def train(self, X, y, epochs_per_model, split_rate):
-		num_samples = X.shape[0]
-		
-		for i in range(self.num_models):
-			print('Training model {}'.format(i))
-			permutation = np.random.permutation(num_samples)
-			X = X[permutation]
-			y = y[permutation]
-			X_train, X_validation, y_train, y_validation = dataset_manip.split_dataset(X, y, rate = split_rate)
-			self.models[i].train(X_train, y_train, X_validation, y_validation, epochs_per_model)
-			
-	def predict(self, X):
-		probabilities = self.models[0].get_probabilities(X)
-		predictions = np.empty(shape = (X.shape[0], self.num_models))
-		predictions[:, 0] = self.models[0].predict(X)
-		
-		for i in range(1, self.num_models):
-			probabilities = np.multiply(probabilities, self.models[i].get_probabilities(X))
-			predictions[:, i] = self.models[i].predict(X)
-		
-		for i in range(X.shape[0]):
-			predictions[i, :] = collections.Counter(predictions[i, :]).most_common(1)[0][0]	
-			
-		print(predictions)	
-		#return probabilities.argmax(axis = 1)	
-		
-		
-	def measure_accuracy(self, X, y):
-		return np.mean(self.predict(X) == y)	
+	

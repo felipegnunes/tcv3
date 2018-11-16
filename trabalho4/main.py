@@ -9,7 +9,8 @@ import tensorflow as tf
 import itertools
 
 import dataset_manip		
-from model import Model, Ensemble
+from model import Model
+from ensemble import Ensemble
 					
 def store_predictions(predictions, dataset_directory):
 	_, test_images = dataset_manip.load_paths(dataset_directory)
@@ -33,19 +34,18 @@ def main():
 	print('X.shape = ' + str(X.shape))
 	print('X_hidden.shape = ' + str(X_hidden.shape))
 	
-	#X_train, X_validation, y_train, y_validation = dataset_manip.split_dataset(X, y, rate = 0.8)
-	#model = Model(image_shape = X.shape[1 : ], num_classes = num_classes, model_path = './model_files/model', batch_size = 1250, first_run = True)
-	#model.train(X_train, y_train, X_validation, y_validation, 1)
-	#print(model.measure_accuracy(X_validation, y_validation))
-	#print(model.predict(X_hidden))
+	X_train, X_validation, y_train, y_validation = dataset_manip.split_dataset(X, y, rate = 0.8)
+	model = Model(image_shape = X.shape[1 : ], num_classes = num_classes, model_path = './model_files/model', batch_size = 1250, first_run = True)
+	model.train(X_train, y_train, X_validation, y_validation, 3)
+	print(model.measure_accuracy(X_validation, y_validation))
+	#pr																					int(model.predict(X_hidden))
 	
 	# ENSEMBLE
 	
-	ensemble = Ensemble(input_shape = X.shape[1: ], num_classes = num_classes, num_models = 2, batch_size = 1250)
-	ensemble.train(X = X, y = y, epochs_per_model = 1, split_rate = 0.8)
-	
-	predictions = ensemble.predict(X_hidden)
-	#print(predictions)
+	#ensemble = Ensemble(input_shape = X.shape[1: ], num_classes = num_classes, num_models = 3, batch_size = 1250, path = './ens')
+	#print(ensemble.measure_accuracy(X, y))
+	#ensemble.train(X = X, y = y, epochs_per_model = 1, split_rate = 0.8)
+	#print(ensemble.measure_accuracy(X, y))
 	#store_predictions(predictions, DATASET_DIRECTORY)
 	
 if __name__ == '__main__':

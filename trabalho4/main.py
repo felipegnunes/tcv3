@@ -8,7 +8,8 @@ import os
 import tensorflow as tf
 import itertools
 
-import dataset_manip		
+import dataset_manip
+import image_manip
 from model import Model
 from ensemble import Ensemble
 					
@@ -34,19 +35,28 @@ def main():
 	print('X.shape = ' + str(X.shape))
 	print('X_hidden.shape = ' + str(X_hidden.shape))
 	
-	X_train, X_validation, y_train, y_validation = dataset_manip.split_dataset(X, y, rate = 0.8)
-	model = Model(image_shape = X.shape[1 : ], num_classes = num_classes, model_path = './model_files/model', batch_size = 1250, first_run = True)
-	model.train(X_train, y_train, X_validation, y_validation, 3)
+	X_train, X_validation, y_train, y_validation = dataset_manip.split_dataset(X, y, rate = 0.5)
+	
+	model = Model(image_shape = X.shape[1 : ], num_classes = num_classes, model_path = './model_files/model', batch_size = 100, first_run = True)
+	
+	model.train(X_train, y_train, X_validation, y_validation, 20)
+	for epoch in range(10):
+		#perturbate_randomly(images, horizontal_shift_range, vertical_shift_range, angle_range, contrast_alpha_range, zoom_factor_range):
+		X_train_aug = image_manip.perturbate_randomly(X_train, (-10, 10), (-10, 10), (-10, 10), (.8, 1.2), (.8, 1.2))
+		model.train(X_train_aug, y_train, X_validation, y_validation, 20)
+	
+	for epoch in range(10):
+		#perturbate_randomly(images, horizontal_shift_range, vertical_shift_range, angle_range, contrast_alpha_range, zoom_factor_range):
+		X_train_aug = image_manip.perturbate_randomly(X_train, (-15, 15), (-15, 15), (-15, 15), (.7, 1.3), (.7, 1.3))
+		model.train(X_train_aug, y_train, X_validation, y_validation, 10)
+		
+	for epoch in range(10):
+		#perturbate_randomly(images, horizontal_shift_range, vertical_shift_range, angle_range, contrast_alpha_range, zoom_factor_range):
+		X_train_aug = image_manip.perturbate_randomly(X_train, (-20, 20), (-20, 20), (-20, 20), (.5, 1.5), (.8, 1.2))
+		model.train(X_train_aug, y_train, X_validation, y_validation, 10)
+		
 	print(model.measure_accuracy(X_validation, y_validation))
-	#pr																					int(model.predict(X_hidden))
-	
-	# ENSEMBLE
-	
-	#ensemble = Ensemble(input_shape = X.shape[1: ], num_classes = num_classes, num_models = 3, batch_size = 1250, path = './ens')
-	#print(ensemble.measure_accuracy(X, y))
-	#ensemble.train(X = X, y = y, epochs_per_model = 1, split_rate = 0.8)
-	#print(ensemble.measure_accuracy(X, y))
-	#store_predictions(predictions, DATASET_DIRECTORY)
+	#print(model.predict(X_hidden))
 	
 if __name__ == '__main__':
 	main()

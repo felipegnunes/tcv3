@@ -1,6 +1,8 @@
 import tensorflow as tf
 import numpy as np
+
 import dataset_manip
+import image_manip
 
 class Model:
 	
@@ -70,10 +72,10 @@ class Model:
 				
 				while index < num_samples:
 					batch_loss, batch_accuracy, _ = session.run([self.loss, self.accuracy, self.train_operation], 
-										    feed_dict = {self.X: X_train[index : index + self.batch_size], 
-												 self.y: y_train[index : index + self.batch_size],
-												 self.keep_prob0: 0.75,
-												 self.keep_prob1: 0.5})
+																feed_dict = {self.X: X_train[index : index + self.batch_size], 
+																			 self.y: y_train[index : index + self.batch_size],
+																			 self.keep_prob0: 0.75,
+																			 self.keep_prob1: 0.5})
 					training_loss += batch_loss
 					training_accuracy += batch_accuracy
 					num_batches += 1
@@ -94,10 +96,10 @@ class Model:
 					X_remainder = np.concatenate((X_remainder, X_train[ : index]), axis = 0)
 					y_remainder = np.concatenate((y_remainder, y_train[ : index]), axis = 0)	
 					batch_loss, batch_accuracy, _ = session.run([self.loss, self.accuracy, self.train_operation], 
-										    feed_dict = {self.X: X_remainder, 
-										    		 self.y: y_remainder,
-										    		 self.keep_prob0: 0.75,
-												 self.keep_prob1: 0.5})
+																 feed_dict = {self.X: X_remainder, 
+																			  self.y: y_remainder,
+																			  self.keep_prob0: 0.75,
+																			  self.keep_prob1: 0.5})
 					training_loss += batch_loss
 					training_accuracy += batch_accuracy
 					num_batches += 1
@@ -105,12 +107,7 @@ class Model:
 				training_loss /= num_batches
 				training_accuracy /= num_batches
 				
-				num_validation_samples = X_validation.shape[0]
-				predictions = np.empty(shape = (num_validation_samples, ), dtype = np.int32)
-				for i in range(0, num_validation_samples, self.batch_size):
-					j = min(i + self.batch_size, num_validation_samples)
-					predictions[i : j] = session.run(self.result, feed_dict = {self.X: X_validation[i : j], self.y: y_validation[i : j]})
-				validation_accuracy = np.mean(predictions == y_validation)	
+				validation_accuracy = self._measure_accuracy_online(session, X_validation, y_validation) #np.mean(predictions == y_validation)	
 				
 				print('Training Accuracy:   {:8.5}\tTraining Loss: {:8.5}'.format(training_accuracy, training_loss))
 				print('Validation Accuracy: {:8.5}'.format(validation_accuracy))
@@ -145,10 +142,10 @@ class Model:
 				
 				while index < num_samples:
 					batch_loss, batch_accuracy, _ = session.run([self.loss, self.accuracy, self.train_operation], 
-										    feed_dict = {self.X: X_train[index : index + self.batch_size], 
-												 self.y: y_train[index : index + self.batch_size],
-												 self.keep_prob0: 0.75,
-												 self.keep_prob1: 0.5})
+																feed_dict = {self.X: X_train[index : index + self.batch_size], 
+																			 self.y: y_train[index : index + self.batch_size],
+																			 self.keep_prob0: 0.75,
+																			 self.keep_prob1: 0.5})
 					training_loss += batch_loss
 					training_accuracy += batch_accuracy
 					num_batches += 1
@@ -169,10 +166,10 @@ class Model:
 					X_remainder = np.concatenate((X_remainder, X_train[ : index]), axis = 0)
 					y_remainder = np.concatenate((y_remainder, y_train[ : index]), axis = 0)	
 					batch_loss, batch_accuracy, _ = session.run([self.loss, self.accuracy, self.train_operation], 
-										    feed_dict = {self.X: X_remainder, 
-										    		 self.y: y_remainder,
-										    		 self.keep_prob0: 0.75,
-												 self.keep_prob1: 0.5})
+																feed_dict = {self.X: X_remainder, 
+																			 self.y: y_remainder,
+																			 self.keep_prob0: 0.75,
+																			 self.keep_prob1: 0.5})
 					training_loss += batch_loss
 					training_accuracy += batch_accuracy
 					num_batches += 1
@@ -180,12 +177,7 @@ class Model:
 				training_loss /= num_batches
 				training_accuracy /= num_batches
 				
-				num_validation_samples = X_validation.shape[0]
-				predictions = np.empty(shape = (num_validation_samples, ), dtype = np.int32)
-				for i in range(0, num_validation_samples, self.batch_size):
-					j = min(i + self.batch_size, num_validation_samples)
-					predictions[i : j] = session.run(self.result, feed_dict = {self.X: X_validation[i : j], self.y: y_validation[i : j]})
-				validation_accuracy = np.mean(predictions == y_validation)	
+				validation_accuracy = self._measure_accuracy_online(session, X_validation, y_validation)	
 				
 				print('Training Accuracy:   {:8.5}\tTraining Loss: {:8.5}'.format(training_accuracy, training_loss))
 				print('Validation Accuracy: {:8.5}'.format(validation_accuracy))
@@ -195,7 +187,7 @@ class Model:
 					print('New best accuracy:   {:8.5}'.format(best_accuracy))
 					self.saver.save(session, self.model_path)
 	
-	def _measure_accuracy_online(X_validation, y_validation):
+	def _measure_accuracy_online(self, session, X_validation, y_validation):
 		num_validation_samples = X_validation.shape[0]
 		predictions = np.empty(shape = (num_validation_samples, ), dtype = np.int32)
 		for i in range(0, num_validation_samples, self.batch_size):

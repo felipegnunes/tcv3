@@ -25,7 +25,7 @@ def main():
 	
 	X_train, X_validation, y_train, y_validation = dataset_manip.split_dataset(X, y, rate = 0.9)
 	
-	model = Model(image_shape = X.shape[1 : ], num_classes = num_classes, model_path = './model_files/model', batch_size = 1250, first_run = True)	
+	model = Model(image_shape = X.shape[1 : ], num_classes = num_classes, model_path = './model_files/model', batch_size = 128, first_run = True) # 1250	
 	
 	model.train(X_train, y_train, X_validation, y_validation, 50)
 	

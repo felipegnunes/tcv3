@@ -19,12 +19,6 @@ def load_dataset(dataset_directory, shuffle = True):
 	
 	return X, y, X_hidden	
 	
-def get_immediate_subdirectories(directory_path):
-	return [subdirectory for subdirectory in os.listdir(directory_path) if os.path.isdir(os.path.join(directory_path, subdirectory))]
-
-def get_filenames(directory_path):
-	return [filename for filename in os.listdir(directory_path) if os.path.isfile(os.path.join(directory_path, filename))]
-
 def load_paths(dataset_directory):
 	train_directory_path = os.path.join(dataset_directory, 'train')
 	test_directory_path = os.path.join(dataset_directory, 'test')
@@ -68,6 +62,14 @@ def load_images(image_list):
 	
 	return images
 
+def store_predictions(filenames, predictions, path = './predictions.txt'):
+	result = list(zip(filenames, predictions))
+	result.sort(key = lambda x: int(os.path.splitext(x[0])[0]))
+	
+	with open(path, 'w') as f:
+		for filename, prediction in result:
+			f.write('{} {}\n'.format(filename, prediction))
+
 def split_dataset(X, y, rate = 0.7):
 	split_point = int(X.shape[0] * rate)
 	X1 = X[ : split_point]
@@ -75,4 +77,10 @@ def split_dataset(X, y, rate = 0.7):
 	y1 = y[ : split_point]
 	y2 = y[split_point : ]
 	return X1, X2, y1, y2	
+
+def get_immediate_subdirectories(directory_path):
+	return [subdirectory for subdirectory in os.listdir(directory_path) if os.path.isdir(os.path.join(directory_path, subdirectory))]
+
+def get_filenames(directory_path):
+	return [filename for filename in os.listdir(directory_path) if os.path.isfile(os.path.join(directory_path, filename))]
 

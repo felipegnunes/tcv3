@@ -23,12 +23,12 @@ def main():
 	print('X.shape = ' + str(X.shape))
 	print('X_hidden.shape = ' + str(X_hidden.shape))
 	
-	X_train, X_validation, y_train, y_validation = dataset_manip.split_dataset(X, y, rate = 0.9)
+	X_train, X_validation, y_train, y_validation = dataset_manip.split_dataset(X, y, rate = 0.5)
 	
-	model = Model(image_shape = X.shape[1 : ], num_classes = num_classes, model_path = './model_files/model', batch_size = 128, first_run = True) # 1250	
+	model = Model(image_shape = X.shape[1 : ], num_classes = num_classes, model_path = './model_files/model', batch_size = 1024, first_run = True) # 1250	
 	
-	model.train(X_train, y_train, X_validation, y_validation, 10)
-	
+	model.train(X_train, y_train, X_validation, y_validation, 300)
+	model.train_unsupervised(X_hidden, X_validation, y_validation, 150)
 	
 	return
 	for epoch in range(10):

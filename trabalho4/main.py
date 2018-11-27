@@ -27,11 +27,13 @@ def main():
 	
 	model = Model(image_shape = X.shape[1 : ], num_classes = num_classes, model_path = './model_files/model', batch_size = 128, first_run = True) # 1250	
 	
-	model.train(X_train, y_train, X_validation, y_validation, 50)
+	model.train(X_train, y_train, X_validation, y_validation, 10)
 	
+	
+	return
 	for epoch in range(10):
 		#perturbate_randomly(images, horizontal_shift_range, vertical_shift_range, angle_range, contrast_alpha_range, zoom_factor_range):
-		X_train_aug = image_manip.perturbate_randomly(X_train, (-10, 10), (-10, 10), (-10, 10), (.8, 1.2), (.8, 1.2))
+		#X_train_aug = image_manip.perturbate_randomly(X_train, (-10, 10), (-10, 10), (-10, 10), (.8, 1.2), (.8, 1.2))
 		model.train(X_train_aug, y_train, X_validation, y_validation, 20)
 	
 	print(model.measure_accuracy(X_validation, y_validation))

@@ -1,5 +1,7 @@
 import numpy as np
 import collections
+import os
+
 import dataset_manip
 from model import Model
 
@@ -12,10 +14,10 @@ class Ensemble:
 		self.models = []
 		for i in range(num_models):
 			model = Model(image_shape = input_shape, 
-				      num_classes = num_classes, 
-				      model_path = path + '/model_' + str(i), 
-				      batch_size = batch_size, 
-				      first_run = not load)
+						  num_classes = num_classes, 
+						  model_path = os.path.join(path, 'model_' + str(i)), 
+						  batch_size = batch_size, 
+						  first_run = not load)
 			self.models.append(model)
 		
 	def train(self, X, y, epochs_per_model, split_rate):
@@ -40,8 +42,7 @@ class Ensemble:
 		for i in range(X.shape[0]):
 			predictions[i] = collections.Counter(votes[i, :]).most_common(1)[0][0]	
 			
-		return predictions	
-		
+		return predictions		
 		
 	def measure_accuracy(self, X, y):
 		return np.mean(self.predict(X) == y)

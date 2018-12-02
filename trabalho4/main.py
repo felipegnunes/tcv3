@@ -23,25 +23,20 @@ def main():
 	print('X.shape = ' + str(X.shape))
 	print('X_hidden.shape = ' + str(X_hidden.shape))
 	
-	X_train, X_validation, y_train, y_validation = dataset_manip.split_dataset(X, y, rate = 0.5)
-	
-	model = Model(image_shape = X.shape[1 : ], num_classes = num_classes, model_path = './model_files/model', batch_size = 1024, first_run = True) # 1250	
-	
-	model.train(X_train, y_train, X_validation, y_validation, 300)
-	model.train_unsupervised(X_hidden, X_validation, y_validation, 150)
+	ens = Ensemble(input_shape = (77, 71, 1), num_classes = 10, num_models = 11, batch_size = 512, path = './ensemble_files', load = False)
+	ens.train(X = X, y = y, epochs_per_model = 300, split_rate = 0.9)
+	print(ens.measure_accuracy(X, y))
 	
 	return
-	for epoch in range(10):
-		#perturbate_randomly(images, horizontal_shift_range, vertical_shift_range, angle_range, contrast_alpha_range, zoom_factor_range):
-		#X_train_aug = image_manip.perturbate_randomly(X_train, (-10, 10), (-10, 10), (-10, 10), (.8, 1.2), (.8, 1.2))
-		model.train(X_train_aug, y_train, X_validation, y_validation, 20)
+	X_train, X_validation, y_train, y_validation = dataset_manip.split_dataset(X, y, rate = 0.5)
 	
-	print(model.measure_accuracy(X_validation, y_validation))
+	model = Model(image_shape = X.shape[1 : ], num_classes = num_classes, model_path = './model_files/model', batch_size = 512, first_run = True) # 1250	
 	
-	model.train_unsupervised(X_hidden, X_validation, y_validation, 100)
+	model.train(X_train, y_train, X_validation, y_validation, 500)
+	model.train_unsupervised(X_hidden, X_validation, y_validation, 200)
 	
-	print(model.measure_accuracy(X_validation, y_validation))
-	dataset_manip.store_predictions(dataset_manip.get_filenames('../data_part1/test'), model.predict(X_hidden), './predictions2.txt')
+	print('Final Accuracy: {}'.format(model.measure_accuracy(X_validation, y_validation)))
+	#dataset_manip.store_predictions(dataset_manip.get_filenames('../data_part1/test'), model.predict(X_hidden), './predictions2.txt')
 	
 if __name__ == '__main__':
 	main()

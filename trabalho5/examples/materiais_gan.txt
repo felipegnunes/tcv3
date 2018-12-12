@@ -1,0 +1,4 @@
+https://github.com/soumith/ganhacks
+https://github.com/dmonn/dcgan-oreilly/blob/master/DCGANs%20with%20Tensorflow.ipynb
+https://github.com/jonbruner/generative-adversarial-networks/blob/master/gan-notebook.ipynb
+https://github.com/uclaacmai/Generative-Adversarial-Network-Tutorial/blob/master/Generative%20Adversarial%20Networks%20Tutorial.ipynb

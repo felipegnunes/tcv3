@@ -141,7 +141,7 @@ sess.run(tf.global_variables_initializer())
 
 NUM_SAMPLES = X.shape[0]
 
-NUM_ITERATIONS = 10000
+NUM_ITERATIONS = 5000
 iteration = 1
 
 while iteration <= NUM_ITERATIONS:
@@ -179,7 +179,7 @@ while iteration <= NUM_ITERATIONS:
 				for j in range(5):
 					imgs_column[j * IMAGE_HEIGHT : (j + 1) * IMAGE_HEIGHT][:] = gen_samples[i * 5 + j]
 				images = np.concatenate((images, imgs_column), axis = 1)
-			cv2.imwrite('/home/felipe/tcv3/trabalho5/results/iteration_' + str(iteration) + '.png', images)	
+			cv2.imwrite('./results/iteration_' + str(iteration) + '.png', images)	
 				
 			### SAVING ###
 
